@@ -9,28 +9,34 @@ export default function DownloadButton({ videoData }) {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
 
-  const BACKEND_URL = 'https://clipall.onrender.com'; // 🔑 your Render backend URL
+  const BACKEND_URL = 'https://clipall.onrender.com'; // your Render URL
 
   useEffect(() => {
-    const s = io(BACKEND_URL, { transports: ['websocket'] });
+    const s = io(BACKEND_URL, {
+      transports: ['websocket', 'polling'],  // Allow fallback to polling
+      secure: true
+    });
     setSocket(s);
 
     s.on('connect', () => console.log('✅ Socket connected:', s.id));
+
     s.on('ffmpeg-progress', data => {
       console.log('📡 Progress event:', data);
-      setProgress(parseFloat(data.percent));
+      setProgress(parseFloat(data.percent || 0));
     });
+
     s.on('ffmpeg-complete', () => {
       console.log('✅ Complete event');
     });
+
     s.on('ffmpeg-error', data => {
       console.error('❌ Error event:', data);
-      setError(data.error);
+      setError(data.error || 'Processing failed');
       setLoading(false);
     });
 
     return () => s.disconnect();
-  }, [BACKEND_URL]);
+  }, []);
 
   const handleDownload = async () => {
     if (!socket || !socket.connected) {
@@ -76,19 +82,21 @@ export default function DownloadButton({ videoData }) {
       <button disabled={loading} onClick={handleDownload}>
         {loading ? `Downloading... ${progress.toFixed(2)}%` : 'Download'}
       </button>
+
       {loading && (
         <div style={{ background: '#ccc', height: 8, marginTop: 5 }}>
           <div
             style={{
               width: `${progress}%`,
               background: 'green',
-              height: '100%'
+              height: '100%',
+              transition: 'width 0.3s ease'
             }}
           ></div>
         </div>
       )}
-      {error && <div style={{ color: 'red' }}>{error}</div>}
+
+      {error && <div style={{ color: 'red', marginTop: 5 }}>{error}</div>}
     </div>
   );
 }
-
