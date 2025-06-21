@@ -1,14 +1,18 @@
 const { exec } = require('child_process');
+const path = require('path');
+
+// Dynamically resolve yt-dlp path (assume it's placed in backend/bin/yt-dlp)
+const ytDlpPath = path.join(__dirname, '../bin/yt-dlp');
 
 exports.downloadWithYtDlp = (url, outputPath) => {
   return new Promise((resolve, reject) => {
-    const command = `"C:\\Users\\Raman Jain\\Desktop\\media- downloader\\yt-dlp\\yt-dlp.exe" "${url}" -o "${outputPath}"`;
+    const command = `"${ytDlpPath}" "${url}" -o "${outputPath}"`;
     console.log('▶️ Executing:', command);
 
     exec(command, (err, stdout, stderr) => {
       if (err) {
-        console.error('❌ yt-dlp error:', stderr);
-        return reject(stderr);
+        console.error('❌ yt-dlp error:', stderr || err.message);
+        return reject(stderr || err.message);
       }
       console.log('📥 yt-dlp stdout:', stdout);
       resolve();
@@ -19,13 +23,13 @@ exports.downloadWithYtDlp = (url, outputPath) => {
 exports.normalizeTime = (t) => {
   if (!t) return '00:00:00';
   const parts = t.split(':');
-  if (parts.length === 2) return `${parts[0]}:${parts[1]}:00`;
-  if (parts.length === 1) return `00:${parts[0]}:00`;
+  if (parts.length === 2) return `00:${parts[0]}:${parts[1]}`;
+  if (parts.length === 1) return `00:00:${parts[0]}`;
   return t;
 };
 
 exports.timeToSeconds = (t) => {
-  const [h, m, s] = t.split(':').map(Number);
+  const [h = 0, m = 0, s = 0] = t.split(':').map(Number);
   return h * 3600 + m * 60 + s;
 };
 
@@ -37,3 +41,4 @@ exports.getCropFilter = (ratio) => {
   };
   return map[ratio] || null;
 };
+

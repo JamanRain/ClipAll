@@ -8,8 +8,12 @@ const {
   normalizeTime
 } = require('../services/videoService');
 
-ffmpeg.setFfmpegPath('C:/Users/Raman Jain/Desktop/media- downloader/ffmeg/ffmpeg-7.1.1-essentials_build/bin/ffmpeg.exe');
-ffmpeg.setFfprobePath('C:/Users/Raman Jain/Desktop/media- downloader/ffmeg/ffmpeg-7.1.1-essentials_build/bin/ffprobe.exe');
+// ✅ Use Linux binaries from your bin folder (Render compatible)
+const ffmpegPath = path.join(__dirname, '../bin/ffmpeg');
+const ffprobePath = path.join(__dirname, '../bin/ffprobe');
+
+ffmpeg.setFfmpegPath(ffmpegPath);
+ffmpeg.setFfprobePath(ffprobePath);
 
 exports.downloadVideo = async (req, res) => {
   const { url, startTime, endTime, aspectRatio, format, socketId } = req.body;
@@ -61,13 +65,13 @@ exports.downloadVideo = async (req, res) => {
         if (io && socketId) {
           io.to(socketId).emit('ffmpeg-complete', { message: 'Processing done!' });
         }
-        res.download(outputPath, () => {
-          cleanup([rawVideoPath, outputPath]);
-        });
+        res.download(outputPath, () => cleanup([rawVideoPath, outputPath]));
       })
       .on('error', (err) => {
         console.error('❌ FFmpeg error:', err);
-        if (io && socketId) io.to(socketId).emit('ffmpeg-error', { error: 'Processing failed' });
+        if (io && socketId) {
+          io.to(socketId).emit('ffmpeg-error', { error: 'Processing failed' });
+        }
         res.status(500).json({ error: 'Processing failed' });
         cleanup([rawVideoPath, outputPath]);
       })
@@ -75,13 +79,18 @@ exports.downloadVideo = async (req, res) => {
 
   } catch (err) {
     console.error('❌ Error:', err.message);
-    if (io && socketId) io.to(socketId).emit('ffmpeg-error', { error: err.message });
+    if (io && socketId) {
+      io.to(socketId).emit('ffmpeg-error', { error: err.message });
+    }
     res.status(500).json({ error: err.message });
   }
 };
 
 function cleanup(paths) {
   paths.forEach(p => {
-    if (fs.existsSync(p)) fs.unlinkSync(p);
+    if (fs.existsSync(p)) {
+      fs.unlinkSync(p);
+    }
   });
 }
+
