@@ -9,8 +9,10 @@ export default function DownloadButton({ videoData }) {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
 
+  const BACKEND_URL = 'https://clipall.onrender.com'; // 🔑 your Render backend URL
+
   useEffect(() => {
-    const s = io('http://localhost:5000');
+    const s = io(BACKEND_URL, { transports: ['websocket'] });
     setSocket(s);
 
     s.on('connect', () => console.log('✅ Socket connected:', s.id));
@@ -28,7 +30,7 @@ export default function DownloadButton({ videoData }) {
     });
 
     return () => s.disconnect();
-  }, []);
+  }, [BACKEND_URL]);
 
   const handleDownload = async () => {
     if (!socket || !socket.connected) {
@@ -47,14 +49,18 @@ export default function DownloadButton({ videoData }) {
     setProgress(0);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/download', {
-        url,
-        startTime,
-        endTime,
-        aspectRatio,
-        format,
-        socketId: socket.id
-      }, { responseType: 'blob' });
+      const response = await axios.post(
+        `${BACKEND_URL}/api/download`,
+        {
+          url,
+          startTime,
+          endTime,
+          aspectRatio,
+          format,
+          socketId: socket.id
+        },
+        { responseType: 'blob' }
+      );
 
       saveAs(new Blob([response.data]), `video.${format}`);
     } catch (e) {
@@ -72,14 +78,17 @@ export default function DownloadButton({ videoData }) {
       </button>
       {loading && (
         <div style={{ background: '#ccc', height: 8, marginTop: 5 }}>
-          <div style={{
-            width: `${progress}%`,
-            background: 'green',
-            height: '100%'
-          }}></div>
+          <div
+            style={{
+              width: `${progress}%`,
+              background: 'green',
+              height: '100%'
+            }}
+          ></div>
         </div>
       )}
       {error && <div style={{ color: 'red' }}>{error}</div>}
     </div>
   );
 }
+
