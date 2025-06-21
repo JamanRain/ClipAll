@@ -8,9 +8,6 @@ const {
   normalizeTime
 } = require('../services/videoService');
 
-ffmpeg.setFfmpegPath('C:/Users/Raman Jain/Desktop/media- downloader/ffmeg/ffmpeg-7.1.1-essentials_build/bin/ffmpeg.exe');
-ffmpeg.setFfprobePath('C:/Users/Raman Jain/Desktop/media- downloader/ffmeg/ffmpeg-7.1.1-essentials_build/bin/ffprobe.exe');
-
 exports.downloadVideo = async (req, res) => {
   const { url, startTime, endTime, aspectRatio, format, socketId } = req.body;
   const io = req.app.get('io');
